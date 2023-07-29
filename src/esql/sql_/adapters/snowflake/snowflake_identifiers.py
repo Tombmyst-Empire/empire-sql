@@ -24,6 +24,8 @@ class SnowflakeIdentifiers:
     def validate_single_identifier(identifier: str) -> bool:
         if identifier and len(identifier) > 255:
             raise BadIdentifierException(identifier, f'Identifier is too long: {len(identifier)} / 255')
+        elif not identifier:
+            return False
 
         return True
 
