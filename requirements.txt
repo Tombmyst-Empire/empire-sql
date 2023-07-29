@@ -1,0 +1,6 @@
+snowflake-connector-python==3.0.4
+
+empire_commons@https://github.com/Tombmyst-Empire/empire-commons/archive/refs/heads/master.zip
+empire_fs@https://github.com/Tombmyst-Empire/empire-fs/archive/refs/heads/master.zip
+empire_json@https://github.com/Tombmyst-Empire/empire-json/archive/refs/heads/master.zip
+empire_reporting@https://github.com/Tombmyst-Empire/empire-reporting/archive/refs/heads/master.zip
