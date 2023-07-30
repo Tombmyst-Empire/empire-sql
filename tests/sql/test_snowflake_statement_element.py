@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 from empire_commons.exceptions import UnexpectedTypeException
 
-from esql.sql_.adapters.snowflake.snowflake_statements import StatementElement
-from esql.sql_.adapters.snowflake.snowflake_values import SnowflakeValueTypes
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_statements import StatementElement
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_values import SnowflakeValueTypes
 
 
 def test_truthy_value_with_placeholder():

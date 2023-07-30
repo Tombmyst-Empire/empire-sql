@@ -7,8 +7,8 @@ from empire_commons.exceptions import UnexpectedTypeException
 from empire_commons.functions import coalesce
 from empire_commons import list_util
 from esql.sql_.adapters.adapter_util import format_query, escape_unescaped_quotes_in_string
-from esql.sql_.adapters.snowflake.snowflake_identifiers import SnowflakeIdentifiers
-from esql.sql_.adapters.snowflake.snowflake_values import SnowflakeValueTypes, SnowflakeValues
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_identifiers import SnowflakeIdentifiers
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_values import SnowflakeValueTypes, SnowflakeValues
 
 
 class StatementProtocol(Protocol):
@@ -88,7 +88,7 @@ class StatementElementMulti:
     Example:
 
         StatementElementMulti(
-            'APPLICATION ROLE %1%2',
+            'APPLICATION ROLE %0%1',
             ('%%.', application_name),
             ('%%', application_role)
         )
@@ -114,11 +114,11 @@ class StatementElementMulti:
     def __init__(
             self,
             element_string: str,
-            *values: tuple[str, Any, Any],
+            *values: tuple[str, Any] | tuple[str, Any, Any],
             value_type: SnowflakeValueTypes = SnowflakeValueTypes.IDENTIFIER
     ):
         self._element_string: str = element_string
-        self._values: tuple[tuple[str, Any, Any]] = values
+        self._values: tuple[tuple[str, Any] | tuple[str, Any, Any]] = values
         self._value_type: SnowflakeValueTypes = value_type
 
     def get(self) -> str:

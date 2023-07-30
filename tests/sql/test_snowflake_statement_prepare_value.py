@@ -5,9 +5,9 @@ from ejson.facades.orjson_ import dumps
 from empire_commons.exceptions import UnexpectedTypeException
 
 from esql.sql_.adapters.adapter_util import escape_unescaped_quotes_in_string
-from esql.sql_.adapters.snowflake.snowflake_identifiers import SnowflakeIdentifiers
-from esql.sql_.adapters.snowflake.snowflake_statements import prepare_value
-from esql.sql_.adapters.snowflake.snowflake_values import SnowflakeValueTypes, SnowflakeValues
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_identifiers import SnowflakeIdentifiers
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_statements import prepare_value
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_values import SnowflakeValueTypes, SnowflakeValues
 
 
 def test_identifier_string():

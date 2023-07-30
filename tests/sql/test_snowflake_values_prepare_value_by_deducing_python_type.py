@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from esql.sql_.adapters.adapter_util import escape_unescaped_quotes_in_string
-from esql.sql_.adapters.snowflake.snowflake_values import SnowflakeValues
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_values import SnowflakeValues
 
 
 def test_handle_integer():

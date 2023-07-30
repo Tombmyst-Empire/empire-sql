@@ -1,6 +1,6 @@
 from __future__ import annotations
-from esql.sql_.adapters.snowflake.snowflake_statements import StatementElementFirst, StatementElement, StatementElementMulti
-from esql.sql_.adapters.snowflake.snowflake_values import SnowflakeValueTypes
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_statements import StatementElementFirst, StatementElement, StatementElementMulti
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_values import SnowflakeValueTypes
 
 
 def test_first_truthy_statement_element():

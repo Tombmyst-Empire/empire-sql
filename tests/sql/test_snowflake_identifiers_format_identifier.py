@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-from esql.sql_.adapters.snowflake.snowflake_identifiers import SnowflakeIdentifiers
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_identifiers import SnowflakeIdentifiers
 
 
 def test_format_none_identifier():

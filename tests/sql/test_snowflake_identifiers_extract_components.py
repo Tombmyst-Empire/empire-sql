@@ -1,5 +1,5 @@
 import pytest
-from esql.sql_.adapters.snowflake.snowflake_identifiers import SnowflakeIdentifiers, SnowflakeIdentifierComponents
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_identifiers import SnowflakeIdentifiers, SnowflakeIdentifierComponents
 
 
 def test_extract_quoted_delimiter():

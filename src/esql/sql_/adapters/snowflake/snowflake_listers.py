@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from esql._internal.ref import DEFAULT_REPORTER
 from esql.sql_.adapters.adapter_util import format_query
-from empire_commons.functions import coalesce, default
+from empire_commons.functions import coalesce
 
-from esql.sql_.adapters.snowflake.snowflake_statements import build_statement, StatementElement, StatementElementFirst
-from esql.sql_.adapters.snowflake.snowflake_identifiers import SnowflakeIdentifiers
-from esql.sql_.adapters.snowflake.snowflake_objects import SnowflakeObjects
-
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_statements import build_statement, StatementElement, StatementElementFirst, StatementElementMulti
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_identifiers import SnowflakeIdentifiers
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_objects import SnowflakeObjects
+from esql.sql_.adapters.snowflake.stmt_components.snowflake_values import SnowflakeValueTypes
 
 LOGGER = DEFAULT_REPORTER
 
@@ -59,31 +59,11 @@ class SnowflakeListers:
 
         if not (statement := StatementElementFirst(
             StatementElement('APPLICATION %%', application_name),
-            StatementElement('APPLICATION ROLE')
+            StatementElementMulti('APPLICATION ROLE %0%1', ('%%.', application_name), ('%%', application_role)),
+            StatementElement('ROLE %%', role),
+            StatementElementMulti('SHARE %0 %1', ('%%', share), ('IN APPLICATION PACKAGE %%', in_application_package)),
+            StatementElement('USER %%', user)
         ).get()):
-            pass
-
-        statement: str = coalesce(
-            f"APPLICATION {application_name}" if application_name else "",
-            f"""APPLICATION ROLE {f"{application_name}." if application_name else ""}{application_role}""" if application_role else "",
-            f"ROLE {role}" if role else "",
-            f"""SHARE {share}{f" IN APPLICATION PACKAGE {in_application_package}" if in_application_package else ""}""" if share else "",
-            f"USER {user}" if user else "",
-            ""
-        )
-
-        # return build_statement(
-        #     'SHOW',
-        #     StatementElement('TERSE', not full_info),
-        #     'USERS',
-        #     StatementElement("LIKE '%%'", ilike),
-        #     StatementElement("STARTS WITH '%%'", starts_with),
-        #     StatementElement('LIMIT %%', limit),
-        #     StatementElement("FROM '%%'", limit_filter),
-        #     indent_level=indent_level
-        # )
-
-        if not statement:
             LOGGER.info('One of these parameters must be provided: "application_name", "application_role", "role", '
                         '"share", "in_application_package", "user"')
             return ''
@@ -177,6 +157,102 @@ class SnowflakeListers:
         )
 
     @staticmethod
+    def list_integrations(
+            *,
+            ilike: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the integrations in your account.
+        :param ilike: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        """
+        return build_statement(
+            'SHOW INTEGRATIONS',
+            StatementElement('%%', ilike, value_type=SnowflakeValueTypes.VALUE),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_api_integrations(
+            *,
+            ilike: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the integrations in your account.
+        :param ilike: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        """
+        return build_statement(
+            'SHOW API INTEGRATIONS',
+            StatementElement('%%', ilike, value_type=SnowflakeValueTypes.VALUE),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_notification_integrations(
+            *,
+            ilike: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the integrations in your account.
+        :param ilike: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        """
+        return build_statement(
+            'SHOW NOTIFICATION INTEGRATIONS',
+            StatementElement('%%', ilike, value_type=SnowflakeValueTypes.VALUE),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_security_integrations(
+            *,
+            ilike: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the integrations in your account.
+        :param ilike: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        """
+        return build_statement(
+            'SHOW SECURITY INTEGRATIONS',
+            StatementElement('%%', ilike, value_type=SnowflakeValueTypes.VALUE),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_storage_integrations(
+            *,
+            ilike: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the integrations in your account.
+        :param ilike: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        """
+        return build_statement(
+            'SHOW STORAGE INTEGRATIONS',
+            StatementElement('%%', ilike, value_type=SnowflakeValueTypes.VALUE),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_roles(
+            *,
+            ilike: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists all the roles which you can view across your entire account, including the system-defined roles and any custom roles that exist.
+        :param ilike: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        """
+        return build_statement(
+            'SHOW ROLES',
+            StatementElement('LIKE %%', ilike, value_type=SnowflakeValueTypes.VALUE),
+            indent_level=indent_level
+        )
+
+    @staticmethod
     def list_users(
             *,
             full_info: bool = True,
@@ -198,9 +274,9 @@ class SnowflakeListers:
             'SHOW',
             StatementElement('TERSE', not full_info),
             'USERS',
-            StatementElement("LIKE '%%'", ilike),
-            StatementElement("STARTS WITH '%%'", starts_with),
-            StatementElement('LIMIT %%', limit),
-            StatementElement("FROM '%%'", limit_filter),
+            StatementElement("LIKE %%", ilike, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement("STARTS WITH %%", starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement("FROM %%", limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
             indent_level=indent_level
         )
