@@ -6,10 +6,10 @@ import ereport
 from empire_commons import list_util
 from empire_commons.functions import or_raise_broad, DefferedCall, then, get_
 
-from esql._internal.ref import REPORTER_NAME, LOGGING_LEVEL_ENV_VAR_NAME
+from esql._internal.ref import REPORTER_NAME, LOGGING_LEVEL_ENV_VAR_NAME, DEFAULT_REPORTER
 from esql.exceptions import BadIdentifierException
 
-LOGGER = ereport.get_or_make_reporter(REPORTER_NAME, LOGGING_LEVEL_ENV_VAR_NAME)
+LOGGER = DEFAULT_REPORTER
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,7 +71,13 @@ class SnowflakeIdentifiers:
         elif '"' in identifier:
             identifier = identifier.replace('"', '""')
 
-        return f'"{identifier}"'
+        return f'"{identifier.upper()}"'
+
+    @staticmethod
+    def format_qualified_name(qualified_name: str) -> str:
+        return '.'.join([
+            SnowflakeIdentifiers.format_identifier(identifier) for identifier in qualified_name.split('.')
+        ])
 
     @staticmethod
     def extract_components(value: str, *, starts_with_db: bool, starts_with_schema: bool) -> SnowflakeIdentifierComponents:
