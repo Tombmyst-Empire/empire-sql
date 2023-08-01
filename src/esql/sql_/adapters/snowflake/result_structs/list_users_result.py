@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 @dataclass(frozen=True, slots=True)
-class ListUsersResults:
+class ListUsersResult:
     name: str
     created_on: datetime
     login_name: str
