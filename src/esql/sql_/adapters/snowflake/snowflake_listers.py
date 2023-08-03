@@ -14,6 +14,47 @@ LOGGER = DEFAULT_REPORTER
 
 class SnowflakeListers:
     @staticmethod
+    def list_organization_accounts(
+            *,
+            history: bool = False,
+            ilike_pattern: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists all the accounts in your organization, excluding managed accounts.
+        :param history: Optionally includes dropped accounts that have not yet been deleted. The output of SHOW ORGANIZATION ACCOUNTS HISTORY includes additional columns related to dropped accounts.
+        :param ilike_pattern: Filters the command output by account identifier. The pattern can match the account name or the account locator. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-organization-accounts
+        """
+        return build_statement(
+            'SHOW ORGANIZATION ACCOUNTS',
+            StatementElement('HISTORY', history),
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_managed_accounts(
+            *,
+            ilike_pattern: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the managed accounts created for your account. Currently used by data providers to create reader accounts for their consumers.
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-managed-accounts
+        """
+        return build_statement(
+            'SHOW MANAGED ACCOUNTS',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
     def list_grants_to_current_user(indent_level: int = 0) -> str:
         """
         Lists all the roles granted to the current user.
@@ -522,6 +563,25 @@ class SnowflakeListers:
         )
 
     @staticmethod
+    def list_variables(
+            *,
+            ilike_pattern: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists all variables defined in the current session.
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-variables
+        """
+        return build_statement(
+            'SHOW VARIABLES',
+            StatementElement('LIKE %%', ilike_pattern),
+            indent_level=indent_level
+        )
+
+    @staticmethod
     def list_locks(
             *,
             in_account: bool = False,
@@ -579,6 +639,799 @@ class SnowflakeListers:
         )
 
     @staticmethod
+    def list_resource_monitors(
+            *,
+            ilike_pattern: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists all the resource monitors in your account for which you have access privileges.
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-resource-monitors
+        """
+        return build_statement(
+            'SHOW RESOURCE MONITORS',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_databases(
+            *,
+            terse: bool = False,
+            history: bool = False,
+            ilike_pattern: str | None = None,
+            starts_with: str | None = None,
+            limit: int | None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the databases for which you have access privileges across your entire account, including dropped databases that are still within the Time Travel retention period and, therefore, can be undropped.
+
+        The output returns database metadata and properties, ordered lexicographically by database name. This is important to note if you wish to filter the results using the provided filters.
+        :param terse: When true, only returns the following: created_on, name, kind, database_name, schema_name
+        :param history: Optionally includes dropped databases that have not yet been purged (i.e. they are still within their respective Time Travel retention periods). If multiple versions of a dropped database exist, the output displays a row for each version. The output also includes an additional dropped_on column
+        :param ilike_pattern: Optionally filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param starts_with: Optionally filters the command output based on the characters that appear at the beginning of the object name. Case-sensitive.
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results. Note that the actual number of rows returned might be less than the specified limit (e.g. the number of existing objects is less than the specified limit).
+        :param limit_filter: The optional FROM 'name_string' subclause effectively serves as a “cursor” for the results. This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+        :return:
+        """
+        return build_statement(
+            'SHOW',
+            StatementElement('TERSE', terse),
+            'DATABASES',
+            StatementElement('HISTORY', history),
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('STARTS WITH %%', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_schemas(
+            *,
+            terse: bool = False,
+            history: bool = False,
+            ilike_pattern: str | None = None,
+            starts_with: str | None = None,
+            limit: int | None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the schemas for which you have access privileges, including dropped schemas that are still within the Time Travel retention period and, therefore, can be undropped. The command can be used to list schemas for the current/specified database, or across your entire account.
+
+        The output returns schema metadata and properties, ordered lexicographically by database and schema name. This is important to note if you wish to filter the results using the provided filters.
+        :param terse: When true, only returns the following: created_on, name, kind, database_name, schema_name
+        :param history: Includes dropped schemas that have not yet been purged (i.e. they are still within their respective Time Travel retention periods). If multiple versions of a dropped schema exist, the output displays a row for each version. The output also includes an additional dropped_on column
+        :param ilike_pattern: Optionally filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param starts_with: Optionally filters the command output based on the characters that appear at the beginning of the object name. Case-sensitive.
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results. Note that the actual number of rows returned might be less than the specified limit (e.g. the number of existing objects is less than the specified limit).
+        :param limit_filter: The optional FROM 'name_string' subclause effectively serves as a “cursor” for the results. This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+        :return:
+        """
+        return build_statement(
+            'SHOW',
+            StatementElement('TERSE', terse),
+            'SCHEMAS',
+            StatementElement('HISTORY', history),
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('STARTS WITH %%', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_shares(
+            *,
+            ilike_pattern: str | None = None,
+            limit: int | None = None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists all shares available in the system:
+
+        - Outbound shares (to consumers) that have been created in your account (as a provider).
+        - Inbound shares (from providers) that are available for your account to consume.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param limit: Filters the command output based on the string of characters that appear at the beginning of the object name. The string must be enclosed in single quotes and is case-sensitive. For example, the following return different results:
+        :param limit_filter: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results. Note that the actual number of rows returned might be less than the specified limit (e.g. the number of existing objects is less than the specified limit).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-shares
+        """
+        return build_statement(
+            'SHOW SHARES',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_objects(
+            *,
+            terse: bool = False,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_current_database: bool = False,
+            in_database: str | None = None,
+            in_current_schema: bool = False,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the tables and views for which you have access privileges. This command can be used to list the tables and views for a specified
+        database or schema (or the current database/schema for the session), or your entire account.
+        :param terse: When true, only returns the following: created_on, name, kind, database_name, schema_name
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_current_database:
+        :param in_database:
+        :param in_current_schema:
+        :param in_schema:
+        :param indent_level:
+        :return:
+        """
+        return build_statement(
+            'SHOW',
+            StatementElement('TERSE', terse),
+            'OBJECTS',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElementFirst(
+                StatementElement('IN ACCOUNT', in_account),
+                StatementElement('IN DATABASE', in_current_database),
+                StatementElement('IN DATABASE %%', in_database),
+                StatementElement('IN SCHEMA', in_current_schema),
+                StatementElement('IN SCHEMA %%', in_schema)
+            ),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_tables(
+            *,
+            terse: bool = False,
+            history: bool = False,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_current_database: bool = False,
+            in_database: str | None = None,
+            in_current_schema: bool = False,
+            in_schema: str | None = None,
+            starts_with: str | None = None,
+            limit: int | None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the schemas for which you have access privileges, including dropped schemas that are still within the Time Travel retention period and, therefore, can be undropped. The command can be used to list schemas for the current/specified database, or across your entire account.
+
+        The output returns schema metadata and properties, ordered lexicographically by database and schema name. This is important to note if you wish to filter the results using the provided filters.
+        :param terse: When true, only returns the following: created_on, name, kind, database_name, schema_name
+        :param history: Includes dropped schemas that have not yet been purged (i.e. they are still within their respective Time Travel retention periods). If multiple versions of a dropped schema exist, the output displays a row for each version. The output also includes an additional dropped_on column
+        :param ilike_pattern: Optionally filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_current_database:
+        :param in_database:
+        :param in_current_schema:
+        :param in_schema:
+        :param starts_with: Optionally filters the command output based on the characters that appear at the beginning of the object name. Case-sensitive.
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results. Note that the actual number of rows returned might be less than the specified limit (e.g. the number of existing objects is less than the specified limit).
+        :param limit_filter: The optional FROM 'name_string' subclause effectively serves as a “cursor” for the results. This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+        :return:
+        """
+        return build_statement(
+            'SHOW',
+            StatementElement('TERSE', terse),
+            'TABLES',
+            StatementElement('HISTORY', history),
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElementFirst(
+                StatementElement('IN ACCOUNT', in_account),
+                StatementElement('IN DATABASE', in_current_database),
+                StatementElement('IN DATABASE %%', in_database),
+                StatementElement('IN SCHEMA', in_current_schema),
+                StatementElement('IN SCHEMA %%', in_schema)
+            ),
+            StatementElement('STARTS WITH %%', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_columns(
+            *,
+            ilike_pattern: str | None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            in_table: str | None = None,
+            in_view: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the columns in the tables or views for which you have access privileges. This command can be used to list the columns for a specified
+        table/view/schema/database (or the current schema/database for the session), or your entire account.
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param in_account: If you specify the keyword ACCOUNT, then the command retrieves records for all schemas in all databases of the current account.
+        :param in_database: The command retrieves records for all schemas of the specified database.
+        :param in_schema: The command retrieves records for the specified database and schema
+        :param in_table: The command retrieves all records for the specified table
+        :param in_view:
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-columns
+        """
+        return build_statement(
+            'SHOW COLUMNS',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElementFirst(
+                StatementElement('IN ACCOUNT', in_account),
+                StatementElement('IN DATABASE %%', in_database),
+                StatementElement('IN SCHEMA %%', in_schema),
+                StatementElement('IN TABLE %%', in_table),
+                StatementElement('IN VIEW %%', in_view)
+            ),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_primary_keys(
+            *,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            in_table: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists primary keys for the specified table, or for all tables in the current or specified schema, or for all tables in the current or
+        specified database, or for all tables in the current account.
+        :param in_account: the command retrieves records for all schemas in all databases of the current account.
+        :param in_database: the command retrieves records for all schemas of the specified database.
+        :param in_schema:
+        :param in_table:
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-primary-keys
+        """
+        return build_statement(
+            'SHOW PRIMARY KEYS',
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            StatementElement('IN TABLE %%', in_table),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_dynamic_tables(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_current_database: bool = False,
+            in_database: str | None = None,
+            in_current_schema: bool = False,
+            in_schema: str | None = None,
+            starts_with: str | None = None,
+            limit: int | None = None,
+            limit_filter: str | None,
+            indent_level: int = 0
+    ):
+        """
+        Lists the dynamic tables for which you have access privileges. The command can be used to list dynamic tables for the current/specified
+        database or schema, or across your entire account.
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_current_database:
+        :param in_database:
+        :param in_current_schema:
+        :param in_schema:
+        :param starts_with: Optionally filters the command output based on the characters that appear at the beginning of the object name. case-sensitive
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results.
+        :param limit_filter: enables fetching the specified number of rows following the first row whose object name matches the specified string
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-dynamic-tables
+        """
+        return build_statement(
+            'SHOW DYNAMIC TABLES',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElementFirst(
+                StatementElement('IN DATABASE', in_current_database),
+                StatementElement('IN DATABASE %%', in_database)
+            ),
+            StatementElementFirst(
+                StatementElement('IN SCHEMA', in_current_schema),
+                StatementElement('IN SCHEMA %%', in_schema)
+            ),
+            StatementElement('STARTS WITH', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_external_tables(
+            *,
+            terse: bool = False,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            starts_with: str | None = None,
+            limit: int = 0,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the external tables for which you have access privileges. The command can be used to list external tables for the current/specified
+        database or schema, or across your entire account.
+        :param terse: Returns columns: created_on, name, kind, database_name, schema_name
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param in_account:
+        :param in_database:
+        :param in_schema:
+        :param starts_with: Filters the command output based on the string of characters that appear at the beginning of the object name. Case-sensitive
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results.
+        :param limit_filter: This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-external-tables
+        """
+        return build_statement(
+            'SHOW',
+            StatementElement('TERSE', terse),
+            'EXTERNAL TABLES',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            StatementElement('STARTS WITH %%', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_event_tables(
+            *,
+            terse: bool = False,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            starts_with: str | None = None,
+            limit: int | None = None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the event tables for which you have access privileges, including dropped tables that are still within the Time Travel retention period
+        and, therefore, can be undropped. The command can be used to list event tables for the current/specified database or schema, or across your
+        entire account.
+        :param terse: Returns columns: created_on, name, database_name, schema_name
+        :param ilike_pattern: Optionally filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param in_account:
+        :param in_database:
+        :param in_schema:
+        :param starts_with: Optionally filters the command output based on the characters that appear at the beginning of the object name. Case-sensitive
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results.
+        :param limit_filter: This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-event-tables
+        """
+        return build_statement(
+            'SHOW',
+            StatementElement('TERSE', terse),
+            'EVENT TABLES',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            StatementElement('STARTS WITH %%', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_views(
+            *,
+            terse: bool = False,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            starts_with: str | None = None,
+            limit: int | None = None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the views, including secure views, for which you have access privileges. The command can be used to list views for the current/specified
+        database or schema, or across your entire account.
+        :param terse: Returns columns: created_on, name, kind, database_name, schema_name
+        :param ilike_pattern: Optionally filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param in_account:
+        :param in_database:
+        :param in_schema:
+        :param starts_with: Optionally filters the command output based on the characters that appear at the beginning of the object name. Case-sensitive
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results.
+        :param limit_filter: This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-views
+        """
+        return build_statement(
+            'SHOW',
+            StatementElement('TERSE', terse),
+            'VIEWS',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            StatementElement('STARTS WITH %%', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_materialized_views(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the materialized views that you have privileges to access.
+        :param ilike_pattern: Optionally filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param in_account:
+        :param in_database:
+        :param in_schema:
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-materialized-views
+        """
+        return build_statement(
+            'SHOW MATERIALIZED VIEWS',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_sequences(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists all the sequences for which you have access privileges. This command can be used to list the sequences for a specified schema or
+        database (or the current schema/database for the session), or your entire account.
+        :param ilike_pattern: Optionally filters the command output by object name. The filter uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).
+        :param in_account:
+        :param in_database:
+        :param in_schema:
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-sequences
+        """
+        return build_statement(
+            'SHOW SEQUENCES',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_functions(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists all the native (i.e. system-defined/built-in) scalar functions provided by Snowflake, as well as any user-defined functions (UDFs) or external functions that have been created for your account.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-functions
+        """
+        return build_statement(
+            'SHOW FUNCTIONS',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_user_functions(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists all user-defined functions (UDFs) for which you have access privileges. This command can be used to list the UDFs for a specified
+         database or schema (or the current database/schema for the session), or across your entire account.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-user-functions
+        """
+        return build_statement(
+            'SHOW USER FUNCTIONS',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_external_functions(
+            *,
+            ilike_pattern: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists all user-defined functions (UDFs) for which you have access privileges. This command can be used to list the UDFs for a specified
+         database or schema (or the current database/schema for the session), or across your entire account.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-external-functions
+        """
+        return build_statement(
+            'SHOW EXTERNAL FUNCTIONS',
+            StatementElement('LIKE %%', ilike_pattern),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_procedures(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the stored procedures that you have privileges to access.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-procedures
+        """
+        return build_statement(
+            'SHOW PROCEDURES',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_streams(
+            *,
+            terse: bool,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            starts_with: str | None = None,
+            limit: int | None = None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the streams for which you have access privileges. The command can be used to list streams for the current/specified database or schema,
+        or across your entire account.
+        :param terse: Returns columns: created_on, name, kind, database_name, schema_name, tableOn
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param starts_with: Optionally filters the command output based on the characters that appear at the beginning of the object name. Case-sensitive
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results.
+        :param limit_filter: This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-streams
+        """
+        return build_statement(
+            'SHOW',
+            StatementElement('TERSE', terse),
+            'STREAMS',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            StatementElement('STARTS WITH %%', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_tasks(
+            *,
+            terse: bool,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            starts_with: str | None = None,
+            root_only: bool = False,
+            limit: int | None = None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the streams for which you have access privileges. The command can be used to list streams for the current/specified database or schema,
+        or across your entire account.
+        :param terse: Returns columns: created_on, name, kind, database_name, schema_name, tableOn
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param starts_with: Optionally filters the command output based on the characters that appear at the beginning of the object name. Case-sensitive
+        :param root_only: Filters the command output to return only root tasks (tasks with no predecessors).
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results.
+        :param limit_filter: This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-tasks
+        """
+        return build_statement(
+            'SHOW',
+            StatementElement('TERSE', terse),
+            'STREAMS',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            StatementElement('STARTS WITH %%', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('ROOT ONLY', root_only),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_masking_policies(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists masking policy information, including the creation date, database and schema names, owner, and any available comments.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-masking-policies
+        """
+        return build_statement(
+            'SHOW MASKING POLICIES',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_row_access_policies(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists masking policy information, including the creation date, database and schema names, owner, and any available comments.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-masking-policies
+        """
+        return build_statement(
+            'SHOW ROW ACCESS POLICIES',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_tags(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the tag information.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-tags
+        """
+        return build_statement(
+            'SHOW TAGS',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
     def list_users(
             *,
             full_info: bool = True,
@@ -605,5 +1458,389 @@ class SnowflakeListers:
             StatementElement("STARTS WITH %%", starts_with, value_type=SnowflakeValueTypes.TO_STRING),
             StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
             StatementElement("FROM %%", limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_secrets(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the secrets for which you have rights to see. This command can be used to list the secrets for a specified database or schema (or the
+        current database/schema for the session), or your entire account.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-secrets
+        """
+        return build_statement(
+            'SHOW SECRETS',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_stages(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists all the stages for which you have access privileges. This command can be used to list the stages for a specified schema or database (or
+        the current schema/database for the session), or your entire account.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-secrets
+        """
+        return build_statement(
+            'SHOW STAGES',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_file_formats(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the file formats for which you have access privileges. This command can be used to list the file formats for a specified database or
+        schema (or the current database/schema for the session), or your entire account.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-file-formats
+        """
+        return build_statement(
+            'SHOW FILE FORMATS',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_pipes(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the pipes for which you have access privileges. This command can be used to list the pipes for a specified database or schema (or the
+        current database/schema for the session), or your entire account.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-pipes
+        """
+        return build_statement(
+            'SHOW PIPES',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_streaming_channels(
+            *,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the Snowpipe Streaming channels for which you have access privileges. This command can be used to list the channels for a specified
+        table, database or schema (or the current database/schema for the session), or your entire account.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-channels
+        """
+        return build_statement(
+            'SHOW CHANNELS',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_alerts(
+            *,
+            terse: bool = False,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            starts_with: str | None = None,
+            limit: int | None = None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the alerts for which you have access privileges. The command can be used to list alerts for the current/specified database or schema,
+        or across your entire account.
+
+        :param terse: Returns columns: created_on, name, kind, database_name, schema_name, schedule, state
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param starts_with: Optionally filters the command output based on the characters that appear at the beginning of the object name. Case-sensitive
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results.
+        :param limit_filter: This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-alerts
+        """
+        return build_statement(
+            'SHOW',
+            StatementElement('TERSE', terse),
+            'ALERTS',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            StatementElement('STARTS WITH %%', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_applications(
+            *,
+            ilike_pattern: str | None = None,
+            starts_with: str | None = None,
+            limit: int | None = None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the applications for which you have access privileges across your entire account in the Native Apps Framework.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param starts_with: Optionally filters the command output based on the characters that appear at the beginning of the object name. Case-sensitive
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results.
+        :param limit_filter: This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-applications
+        """
+        return build_statement(
+            'SHOW APPLICATIONS',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('STARTS WITH %%', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_applications_packages(
+            *,
+            ilike_pattern: str | None = None,
+            starts_with: str | None = None,
+            limit: int | None = None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the application packages for which you have access privileges across your entire account in the Native Apps Framework.
+
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param starts_with: Optionally filters the command output based on the characters that appear at the beginning of the object name. Case-sensitive
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results.
+        :param limit_filter: This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-application-packages
+        """
+        return build_statement(
+            'SHOW APPLICATIONS PACKAGES',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('STARTS WITH %%', starts_with, value_type=SnowflakeValueTypes.TO_STRING),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_application_roles(
+            *,
+            application_name: str,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists all the application roles in a specified application.
+
+        :param application_name: Specifies the application whose application roles you want to view.
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-application-roles
+        """
+        return format_query(f'SHOW APPLICATION ROLES {application_name}', indent_level)
+
+    @staticmethod
+    def list_privileges_in_application(
+            *,
+            application_name: str,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the privileges granted to an application.
+
+        :param application_name: Specifies the application whose application roles you want to view.
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-privileges
+        """
+        return format_query(f'SHOW PRIVILEGES IN APPLICATION {application_name}', indent_level)
+
+    @staticmethod
+    def list_references_in_application(
+            *,
+            application_name: str,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the references defined for an application in the manifest file and the references the consumer has associated to the application.
+
+        :param application_name: Specifies the application whose application roles you want to view.
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-references
+        """
+        return format_query(f'SHOW REFERENCES IN APPLICATION {application_name}', indent_level)
+
+    @staticmethod
+    def list_release_directives_in_application(
+            *,
+            application_name: str,
+            ilike_pattern: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the release directives defined for an application package in the Native Apps Framework.
+
+        :param application_name: Specifies the application whose application roles you want to view.
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-release-directives
+        """
+        return build_statement(
+            'SHOW RELEASE DIRECTIVES',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            f'IN APPLICATION PACKAGE {application_name}',
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_versions_in_application_package(
+            *,
+            application_name: str,
+            ilike_pattern: str | None = None,
+            indent_level: int = 0
+    ):
+        """
+        Lists the versions defined the specified application package.
+
+        :param application_name: Specifies the application whose application roles you want to view.
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-versions
+        """
+        return build_statement(
+            'SHOW VERSIONS',
+            StatementElement('LIKE %%', ilike_pattern, value_type=SnowflakeValueTypes.TO_STRING),
+            f'IN APPLICATION PACKAGE {application_name}',
+            indent_level=indent_level
+        )
+
+    @staticmethod
+    def list_streamlits(
+            *,
+            terse: bool = False,
+            ilike_pattern: str | None = None,
+            in_account: bool = False,
+            in_database: str | None = None,
+            in_schema: str | None = None,
+            limit: int | None = None,
+            limit_filter: str | None = None,
+            indent_level: int = 0
+    ) -> str:
+        """
+        Lists the Steamlit objects for which you have access privileges.
+
+        :param terse: Returns columns: created_on, name, database_name, schema_name, url_id
+        :param ilike_pattern: Filters the command output by object name. The filter uses case-insensitive pattern matching with support for SQL wildcard characters (% and _).
+        :param in_account: Returns records for the entire account.
+        :param in_database: Returns records for the current database in use or for a specified database (db_name).
+        :param in_schema: Returns records for the current schema in use or a specified schema (schema_name).
+        :param limit: Optionally limits the maximum number of rows returned, while also enabling “pagination” of the results.
+        :param limit_filter: This enables fetching the specified number of rows following the first row whose object name matches the specified string
+        :param indent_level:
+
+        https://docs.snowflake.com/en/sql-reference/sql/show-streamlits
+        """
+        return build_statement(
+            'SHOW',
+            StatementElement('TERSE', terse),
+            'STREAMLITS',
+            StatementElement('LIKE %%', ilike_pattern),
+            StatementElement('IN ACCOUNT', in_account),
+            StatementElement('IN DATABASE %%', in_database),
+            StatementElement('IN SCHEMA %%', in_schema),
+            StatementElement('LIMIT %%', limit, value_type=SnowflakeValueTypes.VALUE),
+            StatementElement('FROM %%', limit_filter, value_type=SnowflakeValueTypes.TO_STRING),
             indent_level=indent_level
         )
