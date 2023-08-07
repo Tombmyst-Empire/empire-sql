@@ -24,7 +24,7 @@ class SnowflakeValueTypes(Enum):
 
 class SnowflakeValues:
     @staticmethod
-    def prepare_value_by_deducing_python_type(value: Any) -> str:
+    def prepare_value_by_deducing_python_type(value: Any, *, should_parse_json: bool = False) -> str:
         if isinstance(value, (int, float)):
             return str(value)
         elif isinstance(value, str):
@@ -32,6 +32,35 @@ class SnowflakeValues:
         elif value is None:
             return 'null'
         elif isinstance(value, (list, dict)):
-            return f'\'{escape_unescaped_quotes_in_string(dumps(value))}\''
+            if should_parse_json:
+                return f'PARSE_JSON(\'{escape_unescaped_quotes_in_string(dumps(value))}\')'
+            else:
+                return f'\'{escape_unescaped_quotes_in_string(dumps(value))}\''
         else:
             return f"'{escape_unescaped_quotes_in_string(str(value))}'"
+
+    @staticmethod
+    def prepare_value_maybe_json_by_deducing_python_type(value: Any) -> str:
+        return SnowflakeValues.prepare_value_by_deducing_python_type(value, should_parse_json=True)
+
+    @staticmethod
+    def prepare_value_by_type(value: Any, type_: type, *, should_parse_json: bool = False) -> str:
+        if value is None and type in (list, dict) and should_parse_json:
+            return "PARSE_JSON('null')"
+        elif value is None:
+            return 'null'
+        elif type_ in (int, float):
+            return str(value)
+        elif type_ is str:
+            return f"'{escape_unescaped_quotes_in_string(value)}'"
+        elif type_ in (list, dict):
+            if should_parse_json:
+                return f'PARSE_JSON(\'{escape_unescaped_quotes_in_string(dumps(value))}\')'
+            else:
+                return f'\'{escape_unescaped_quotes_in_string(dumps(value))}\''
+        else:
+            return f"'{escape_unescaped_quotes_in_string(str(value))}'"
+
+    @staticmethod
+    def prepare_value_maybe_json_by_type(value: Any, type_: type) -> str:
+        return SnowflakeValues.prepare_value_by_type(value, type_, should_parse_json=True)
